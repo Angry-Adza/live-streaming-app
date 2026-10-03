@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Live Streaming - by Angry Adza</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- React & ReactDOM -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<!-- Babel for JSX -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<!-- HLS.js for stream playback -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<style>
+body {
+background-color: #000;
+color: #fff;
+font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+user-select: none;
+-webkit-user-select: none;
+}
+@keyframes jiggle {
+0% { transform: rotate(-1deg); }
+50% { transform: rotate(1deg); }
+100% { transform: rotate(-1deg); }
+}
+.jiggling {
+animation: jiggle 0.25s infinite ease-in-out;
+}
+.no-scrollbar::-webkit-scrollbar {
+display: none;
+}
+.no-scrollbar {
+-ms-overflow-style: none;
+scrollbar-width: none;
+}
+</style>
+</head>
+<body class="bg-black text-white flex justify-center items-center min-h-screen">
+<div id="root" class="w-full max-w-md h-[100vh] sm:h-[844px] sm:rounded-[40px] sm:border-[8px] sm:border-[#333] overflow-hidden relative flex flex-col bg-black shadow-2xl"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+// Master URL List Template Template Pool
+const INITIAL_URL_TEMPLATE = [
+{ id: 't-1', name: 'NASA TV HD (Live HLS)', url: 'https://nasa-i.akamaihd.net/hls/live/511560/NASA-HD-Public/master.m3u8', type: 'video' },
+{ id: 't-2', name: 'Red Bull TV Action Feed', url: 'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8', type: 'video' },
+{ id: 't-3', name: 'Earth Cam Global Stream', url: 'https://cph-p2p-ms.akamaized.net/hls/live/2003419/test/master.m3u8', type: 'video' },
+{ id: 't-4', name: 'Big Buck Bunny 1080p Sample', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', type: 'video' },
+{ id: 't-5', name: 'Secret Audio Track (MP3)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', type: 'audio' },
+{ id: 't-6', name: 'Alternative Test Stream 2K', url: 'https://cph-p2p-ms.akamaized.net/hls/live/2003419/test/master.m3u8', type: 'video' }
+];
+
+// Custom Icon SVGs with precise color requirements
+const CustomIcon = ({ emoji, className = "text-4xl" }) => {
+if (emoji === '🎬') {
+return (
+<svg className={`inline-block ${className}`} viewBox="0 0 36 36" style={{ width: '1em', height: '1em' }}>
+<path fill="#2E7D32" d="M32 6H4c-1.1 0-2 .9-2 2v20c0 1.1.9 2 2 2h28c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+<path fill="#1B5E20" d="M32 6H4c-1.1 0-2 .9-2 2v6h30V8c0-1.1-.9-2-2-2z"/>
+<path fill="#FFFFFF" d="M6 10l3-3 2 2-3 3zm7 0l3-3 2 2-3 3zm7 0l3-3 2 2-3 3zm7 0l3-3 2 2-3 3z"/>
+<circle cx="12" cy="21" r="5" fill="#C8E6C9"/>
+<path fill="#1B5E20" d="M9 25h6v2H9z"/>
+</svg>
+);
+}
+if (emoji === '🎥') {
+return (
+<svg className={`inline-block ${className}`} viewBox="0 0 36 36" style={{ width: '1em', height: '1em' }}>
+<path fill="#7B1FA2" d="M25 11H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2v-3l6 4V10l-6 4v-3c0-1.1-.9-2-2-2z"/>
+<circle cx="10" cy="18" r="4" fill="#E1BEE7"/>
+<circle cx="20" cy="18" r="3" fill="#E1BEE7"/>
+</svg>
+);
+}
+if (emoji === '🎵' || emoji === '🎶') {
+return (
+<svg className={`inline-block ${className}`} viewBox="0 0 36 36" style={{ width: '1em', height: '1em' }}>
+<path fill="#2962FF" d="M26 4v16.35A5.5 5.5 0 1 0 28 24V10h6V4H26zM10 14v16.35A5.5 5.5 0 1 0 12 34V20h6v-6H10z"/>
+</svg>
+);
+}
+return <span className={className}>{emoji}</span>;
+};
+
+const INITIAL_CATEGORIES = [
+{
+id: 'cat-1',
+name: 'Variety',
+emoji: '🎬',
+subcategories: [
+{ id: 'sub-1-1', name: 'Live News', emoji: '📺', streams: [{ id: 's1', name: 'NASA TV HD', url: 'https://nasa-i.akamaihd.net/hls/live/511560/NASA-HD-Public/master.m3u8' }] }
+]
+},
+{
+id: 'cat-2',
+name: 'Sports',
+emoji: '⚽️',
+subcategories: [
+{ id: 'sub-2-1', name: 'Action Sports', emoji: '🏂', streams: [{ id: 's4', name: 'Extreme Sports Feed', url: 'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8' }] }
+]
+},
+{
+id: 'cat-3',
+name: 'Movies',
+emoji: '🍿',
+subcategories: [
+{ id: 'sub-3-1', name: 'Classic Cinema', emoji: '🎞', streams: [{ id: 's5', name: 'Big Buck Bunny 1080p', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] }
+]
+},
+{
+id: 'cat-4',
+name: 'Filipina Media',
+emoji: '🏝️',
+subcategories: [
+{ id: 'sub-4-1', name: 'Pinoy Hits', emoji: '🎶', streams: [{ id: 's6', name: 'OVP Stream 1', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] }
+]
+},
+{
+id: 'cat-5',
+name: 'Türkiye Media',
+emoji: '🇹🇷',
+subcategories: [
+{ id: 'sub-5-1', name: 'Anadolu Live', emoji: '🧿', streams: [{ id: 's7', name: 'TRT Test Stream', url: 'https://cph-p2p-ms.akamaized.net/hls/live/2003419/test/master.m3u8' }] }
+]
+},
+{
+id: 'cat-6',
+name: 'Private Media',
+emoji: '🔒',
+isLocked: true,
+subcategories: [
+{ id: 'sub-6-1', name: 'Gallery Photos', emoji: '🖼️', streams: [{ id: 'p1', name: 'Secure Photo Stream', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] },
+{ id: 'sub-6-2', name: 'Gallery Videos', emoji: '📼', streams: [{ id: 'p2', name: 'Private Archive', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] },
+{ id: 'sub-6-3', name: '1080p Videos', emoji: '🎦', streams: [{ id: 'p3', name: 'HD Vault Feed', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] },
+{ id: 'sub-6-4', name: '2K Videos', emoji: '📽️', streams: [{ id: 'p4', name: 'QHD Stream', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] },
+{ id: 'sub-6-5', name: '4K Videos', emoji: '🌟', streams: [{ id: 'p5', name: 'Ultra HD Feed', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] },
+{ id: 'sub-6-6', name: 'music', emoji: '🎵', streams: [{ id: 'p6', name: 'Secret Audio Track', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }] }
+]
+},
+{
+id: 'cat-7',
+name: 'Random Media',
+emoji: '🎲',
+subcategories: [
+{ id: 'sub-7-1', name: 'Surprise Feed', emoji: '🎁', streams: [{ id: 's8', name: 'Random Stream', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] }
+]
+},
+{
+id: 'cat-8',
+name: 'Doco’s',
+emoji: '📚',
+subcategories: [
+{ id: 'sub-8-1', name: 'Nature & Science', emoji: '🌿', streams: [{ id: 's9', name: 'Wildlife Doc 1', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }] }
+]
+}
+];
+
+function App() {
+const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+const [urlTemplate, setUrlTemplate] = useState(INITIAL_URL_TEMPLATE);
+const [currentView, setCurrentView] = useState('home'); // 'home', 'category', 'player', 'urlTemplateManager'
+const [selectedCategory, setSelectedCategory] = useState(null);
+const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+const [selectedStream, setSelectedStream] = useState(null);
+const [searchQuery, setSearchQuery] = useState('');
+const [isEditMode, setIsEditMode] = useState(false);
+const [unlockedCategories, setUnlockedCategories] = useState({});
+
+const [authModalOpen, setAuthModalOpen] = useState(false);
+const [pendingCategory, setPendingCategory] = useState(null);
+
+// New template entry inputs
+const [newTemplateName, setNewTemplateName] = useState('');
+const [newTemplateUrl, setNewTemplateUrl] = useState('');
+
+const handleCategoryClick = (cat) => {
+if (isEditMode) return;
+if (cat.isLocked && !unlockedCategories[cat.id]) {
+setPendingCategory(cat);
+setAuthModalOpen(true);
+return;
+}
+setSelectedCategory(cat);
+setCurrentView('category');
+setSearchQuery('');
+};
+
+const authenticateUnlock = () => {
+if (pendingCategory) {
+setUnlockedCategories(prev => ({ ...prev, [pendingCategory.id]: true }));
+setSelectedCategory(pendingCategory);
+setCurrentView('category');
+}
+setAuthModalOpen(false);
+setPendingCategory(null);
+setSearchQuery('');
+};
+
+const allocateTemplateToStream = (templateObj) => {
+if (!selectedStream) return;
+const updatedCategories = categories.map(cat => {
+if (cat.id === selectedCategory?.id) {
+const updatedSubcats = cat.subcategories.map(sub => {
+if (sub.id === selectedSubcategory?.id) {
+const updatedStreams = sub.streams.map(st => {
+if (st.id === selectedStream.id) {
+return { ...st, name: templateObj.name, url: templateObj.url };
+}
+return st;
+});
+return { ...sub, streams: updatedStreams };
+}
+return sub;
+});
+return { ...cat, subcategories: updatedSubcats };
+}
+return cat;
+});
+setCategories(updatedCategories);
+setSelectedStream(prev => ({ ...prev, name: templateObj.name, url: templateObj.url }));
+setCurrentView('player');
+};
+
+const addUrlTemplateItem = (e) => {
+e.preventDefault();
+if (!newTemplateName.trim() || !newTemplateUrl.trim()) return;
+const newItem = {
+id: 't-' + Date.now(),
+name: newTemplateName.trim(),
+url: newTemplateUrl.trim(),
+type: newTemplateUrl.trim().endsWith('.mp3') ? 'audio' : 'video'
+};
+setUrlTemplate([...urlTemplate, newItem]);
+setNewTemplateName('');
+setNewTemplateUrl('');
+};
+
+return (
+<div className="flex flex-col h-full bg-black text-white relative overflow-hidden select-none">
+{/* iOS Status Bar */}
+<div className="flex justify-between items-center px-6 pt-3 pb-1 text-sm font-semibold tracking-tight z-30">
+<span>9:41</span>
+<div className="flex items-center space-x-2 text-xs">
+<span>5G</span>
+<svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19H12c4.97 0 9-4.03 9-9s-4.03-9-9-9z"/></svg>
+</div>
+</div>
+
+{/* Navigation Bar */}
+<div className="px-5 py-2 flex items-center justify-between z-30 border-b border-white/10 bg-black/60 backdrop-blur-md">
+{currentView !== 'home' ? (
+<button
+onClick={() => { setCurrentView('home'); setSelectedCategory(null); setSearchQuery(''); }}
+className="text-blue-400 flex items-center text-base font-medium active:opacity-60"
+>
+<svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+Home
+</button>
+) : (
+<span className="text-xs text-gray-400 uppercase tracking-wider font-bold">Live Streaming - by Angry Adza</span>
+)}
+
+<div className="flex items-center space-x-2">
+<button
+onClick={() => setCurrentView('urlTemplateManager')}
+className="text-xs px-2.5 py-1 rounded-full font-medium bg-blue-600/30 text-blue-400 border border-blue-500/30"
+>
+URL Template
+</button>
+<button
+onClick={() => setIsEditMode(!isEditMode)}
+className={`text-sm px-3 py-1 rounded-full font-medium transition ${isEditMode ? 'bg-blue-600 text-white' : 'bg-white/10 text-gray-300'}`}
+>
+{isEditMode ? 'Done' : 'Edit'}
+</button>
+</div>
+</div>
+
+{/* Search Bar */}
+{currentView !== 'urlTemplateManager' && (
+<div className="px-5 py-3 z-30">
+<div className="relative flex items-center">
+<svg className="w-4 h-4 absolute left-3 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<input
+type="text"
+placeholder="Search"
+value={searchQuery}
+onChange={(e) => setSearchQuery(e.target.value)}
+className="w-full bg-[#1C1C1E] text-white placeholder-gray-500 text-sm rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+/>
+</div>
+</div>
+)}
+
+{/* Main Content View Container */}
+<div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-12 z-20">
+{currentView === 'home' && (
+<div>
+<h1 className="text-2xl font-bold px-1 mb-1">Media Categories</h1>
+<p className="text-xs text-gray-400 px-1 mb-4">{categories.length} Categories</p>
+
+<div className="grid grid-cols-3 gap-3">
+{categories.map((cat) => {
+const matchesSearch = searchQuery === '' || cat.name.toLowerCase().includes(searchQuery.toLowerCase());
+if (!matchesSearch && searchQuery !== '') return null;
+
+return (
+<div
+key={cat.id}
+onClick={() => handleCategoryClick(cat)}
+className={`flex flex-col items-center justify-center p-2 rounded-2xl cursor-pointer transition ${isEditMode ? 'jiggling bg-white/5 border border-white/10' : 'hover:bg-white/5 active:scale-95'}`}
+>
+<div className="w-16 h-16 flex items-center justify-center bg-transparent mb-1 relative">
+<CustomIcon emoji={cat.emoji} className="text-4xl drop-shadow-md" />
+{cat.isLocked && !unlockedCategories[cat.id] && (
+<span className="absolute bottom-0 right-0 bg-black/70 p-1 rounded-full text-xs">🔒</span>
+)}
+</div>
+<span className="text-[15px] text-center font-medium leading-tight line-clamp-2 w-full px-1 text-gray-200">
+{cat.name}
+</span>
+</div>
+);
+})}
+</div>
+</div>
+)}
+
+{currentView === 'category' && selectedCategory && (
+<div>
+<h1 className="text-2xl font-bold px-1 mb-1 flex items-center">
+<CustomIcon emoji={selectedCategory.emoji} className="text-2xl mr-2" />
+{selectedCategory.name}
+</h1>
+<p className="text-xs text-gray-400 px-1 mb-4">Subcategories & Streams</p>
+
+<div className="grid grid-cols-3 gap-3">
+{selectedCategory.subcategories.map((sub) => {
+const matchesSearch = searchQuery === '' || sub.name.toLowerCase().includes(searchQuery.toLowerCase());
+if (!matchesSearch && searchQuery !== '') return null;
+
+return (
+<div
+key={sub.id}
+onClick={() => {
+if (!isEditMode && sub.streams.length > 0) {
+setSelectedSubcategory(sub);
+setSelectedStream(sub.streams[0]);
+setCurrentView('player');
+}
+}}
+className={`flex flex-col items-center justify-center p-2 rounded-2xl cursor-pointer transition ${isEditMode ? 'jiggling bg-white/5 border border-white/10' : 'hover:bg-white/5 active:scale-95'}`}
+>
+<div className="w-16 h-16 flex items-center justify-center bg-transparent mb-1">
+<CustomIcon emoji={sub.emoji} className="text-[29px] drop-shadow-md" />
+</div>
+<span className="text-[15px] text-center font-medium leading-tight line-clamp-2 w-full px-1 text-gray-200">
+{sub.name}
+</span>
+</div>
+);
+})}
+</div>
+</div>
+)}
+
+{currentView === 'urlTemplateManager' && (
+<div className="pt-2">
+<h1 className="text-xl font-bold mb-1">URL List Template</h1>
+<p className="text-xs text-gray-400 mb-4">Manage your master stream templates or allocate them directly to your active stream.</p>
+
+{/* Add new template form */}
+<form onSubmit={addUrlTemplateItem} className="bg-[#1C1C1E] p-3 rounded-2xl border border-white/10 mb-4 space-y-2">
+<h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Add New Template URL</h3>
+<input
+type="text"
+placeholder="Stream Name (e.g. Live Camera)"
+value={newTemplateName}
+onChange={(e) => setNewTemplateName(e.target.value)}
+className="w-full bg-black text-xs text-white p-2.5 rounded-xl border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500"
+/>
+<input
+type="text"
+placeholder="Stream URL (.m3u8 or .mp3)"
+value={newTemplateUrl}
+onChange={(e) => setNewTemplateUrl(e.target.value)}
+className="w-full bg-black text-xs text-blue-400 p-2.5 rounded-xl border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+/>
+<button
+type="submit"
+className="w-full bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl text-white transition active:scale-95"
+>
+Add to URL Template
+</button>
+</form>
+
+<div className="space-y-3">
+<h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">Available Template Items</h3>
+{urlTemplate.map((item) => (
+<div key={item.id} className="bg-[#1C1C1E] p-3 rounded-2xl border border-white/10 flex flex-col space-y-2">
+<div className="flex justify-between items-center">
+<span className="font-semibold text-sm text-white">{item.name}</span>
+<span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-mono uppercase">{item.type}</span>
+</div>
+<p className="text-xs text-gray-400 font-mono truncate">{item.url}</p>
+{selectedStream && (
+<button
+onClick={() => allocateTemplateToStream(item)}
+className="w-full mt-1 bg-blue-600 hover:bg-blue-500 text-xs font-medium py-2 rounded-xl text-white transition active:scale-95"
+>
+Allocate Template to "{selectedStream.name}"
+</button>
+)}
+</div>
+))}
+</div>
+</div>
+)}
+
+{currentView === 'player' && selectedStream && (
+<div className="flex flex-col h-full pt-2">
+<div className="text-lg font-bold mb-1">{selectedSubcategory?.name}</div>
+<div className="text-xs text-gray-400 mb-4 flex justify-between items-center">
+<span>{selectedStream.name}</span>
+<button
+onClick={() => setCurrentView('urlTemplateManager')}
+className="text-blue-400 text-xs underline font-medium"
+>
+Pick from URL Template
+</button>
+</div>
+
+<div className="w-full bg-[#1C1C1E] rounded-2xl overflow-hidden aspect-video relative flex items-center justify-center shadow-lg mb-4 border border-white/10">
+{selectedStream.url.endsWith('.mp3') ? (
+<div className="flex flex-col items-center space-y-4">
+<div className="w-20 h-20 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400">
+<CustomIcon emoji="🎵" className="text-4xl" />
+</div>
+<audio controls autoPlay className="w-64">
+<source src={selectedStream.url} type="audio/mpeg" />
+Your browser does not support the audio element.
+</audio>
+</div>
+) : (
+<video
+ref={(el) => {
+if (el && selectedStream.url) {
+if (Hls.isSupported() && selectedStream.url.includes('.m3u8')) {
+const hls = new Hls();
+hls.loadSource(selectedStream.url);
+hls.attachMedia(el);
+} else {
+el.src = selectedStream.url;
+}
+}
+}}
+controls
+autoPlay
+playsInline
+className="w-full h-full object-contain bg-black"
+/>
+)}
+</div>
+
+<div className="bg-[#1C1C1E] p-4 rounded-2xl border border-white/10">
+<h3 className="text-sm font-semibold text-gray-300 mb-2">Active Stream Source URL</h3>
+<input
+type="text"
+value={selectedStream.url}
+onChange={(e) => {
+const updatedVal = e.target.value;
+setSelectedStream(prev => ({ ...prev, url: updatedVal }));
+}}
+className="w-full bg-black text-xs text-blue-400 p-2.5 rounded-xl border border-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+/>
+</div>
+</div>
+)}
+</div>
+
+{/* Face ID Security Authentication Modal */}
+{authModalOpen && (
+<div className="absolute inset-0 bg-black/80 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+<div className="w-16 h-16 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 mb-4 border border-blue-500/30">
+<svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+</div>
+<h2 className="text-xl font-bold mb-1">Private Media Locked</h2>
+<p className="text-xs text-gray-400 mb-6">Phone security authentication required to access subcategories and URLs.</p>
+
+<button
+onClick={authenticateUnlock}
+className="w-full max-w-xs bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-2xl shadow-lg transition active:scale-95 mb-3"
+>
+Use Face ID / Unlock
+</button>
+<button
+onClick={() => { setAuthModalOpen(false); setPendingCategory(null); }}
+className="text-xs text-gray-400 hover:text-white"
+>
+Cancel
+</button>
+</div>
+)}
+
+{/* iOS Home Indicator Bar */}
+<div className="w-full py-2 flex justify-center items-center bg-black z-30">
+<div className="w-32 h-1 bg-white/40 rounded-full"></div>
+</div>
+</div>
+);
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>
