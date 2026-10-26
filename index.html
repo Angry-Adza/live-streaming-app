@@ -25,7 +25,7 @@
             align-items: center;
         }
         .container { width: 100%; max-width: 850px; }
-        
+                
         /* Video Player Styling */
         .player-wrapper {
             position: sticky;
@@ -104,31 +104,85 @@
         }
         .sub-header:hover { background: rgba(255,255,255,0.05); }
         .sub-body {
-            padding: 8px 12px;
+            padding: 12px;
             display: none;
             border-top: 1px solid var(--card-border);
-            flex-direction: column;
-            gap: 6px;
         }
-        .sub-group.open .sub-body { display: flex; }
+        .sub-group.open .sub-body { display: block; }
         .sub-group.open .arrow { transform: rotate(90deg); }
         .arrow { transition: transform 0.2s; font-size: 0.8rem; color: var(--text-sub); }
 
-        /* Item Selection Buttons */
-        .media-btn {
-            background: rgba(15, 23, 42, 0.6);
-            color: var(--text-main);
-            border: 1px solid var(--card-border);
-            padding: 12px 14px;
-            text-align: left;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.2s;
+        /* 3-Column Grid Layout for Movies */
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
         }
-        .media-btn:active, .media-btn:hover {
-            background: var(--accent-hover);
+
+        /* Horizontal Scrolling Track for Seasons/Episodes */
+        .season-title {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 6px;
+        }
+        .horizontal-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--card-border);
+        }
+        .horizontal-scroll::-webkit-scrollbar {
+            height: 12px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        /* Media Card Styling */
+        .media-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            flex: 0 0 120px; /* Fixed width for horizontal scrolling items */
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .media-grid .media-card {
+            flex: unset; /* Full expansion for movies grid */
+        }
+        .media-card:hover {
+            transform: translateY(-3px);
             border-color: var(--accent);
+        }
+        .media-poster {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            background: #000;
+        }
+        .media-title {
+            padding: 2px;
+            font-size: 0.75rem;
+            color: var(--text-main);
+            text-align: center;
+            font-weight: 400;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        @media (max-width: 500px) {
+            .media-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -143,82 +197,173 @@
         <div class="now-playing" id="nowPlayingText">Select a media file below to start streaming 🎬</div>
     </div>
 
-    <h1>Pocket Cinema - by Angry Adza</h1>
-    <p class="subtitle">Secure Partner Stream (Cloudflare R2)</p>
+    <h1 style="font-family: Century Gothic;">Pocket Cinema - by Angry Adza 🇵🇭 </h1>
+    <p class="subtitle">Secure Partner Stream (🌩Cloudflare R2)</p>
 
     <!-- 3 Main Categories Tabs -->
     <div class="main-tabs">
         <button class="tab-btn active" onclick="switchCategory('movies', this)">🎬 Movies</button>
         <button class="tab-btn" onclick="switchCategory('tv', this)">📺 TV Series</button>
-        <button class="tab-btn" onclick="switchCategory('music', this)">🎵 Music TV</button>
+        <button class="tab-btn" onclick="switchCategory('music', this)">🎵 Live TV</button>
     </div>
 
     <!-- CATEGORY 1: BLOCKBUSTER MOVIES -->
-    <div id="movies" class="section-content active">
-        <div class="sub-body" style="display: flex; gap: 8px;">
-            <!-- REPLACE URLS & TITLES WITH YOUR R2 LINKS -->
-            <button class="media-btn" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/Movies/Coyote.Vs.Acme.2026.mp4', 'Coyote Vs Acme (2026)')">▶ Coyote Vs Acme</button>
-            <button class="media-btn" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/Movies/Toy.Story.5.2026.mp4', 'Toy Story 5 (2026)')">▶ Toy Story 5</button>
-        </div>
-    </div>
+    	<div id="movies" class="section-content active">
+        
+                <!-- Action -->
+                <div class="season-title">ACTION</div>
+                <div class="horizontal-scroll">
+				
+					<div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/Movies/Pee-Mak_(ENG-SUB)_web.mp4', 'Pee Mak')">
+						<img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300" class="media-poster" alt="Pee Mak">
+						<div class="media-title">Pee Mak (2013) 👿</div>
+					</div>
+					<div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/Movies/Primate.2025_web.mp4', 'Primate')">
+						<img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300" class="media-poster" alt="Primate">
+						<div class="media-title">Primate (2015)</div>
+					</div>
+					<div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/movies/Underworld-Blood-Wars-2016_web.mp4', 'Underworld - Blood Wars')">
+						<img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300" class="media-poster" alt="Underworld">
+						<div class="media-title">Underworld - Blood Wars</div>
+					</div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%201%20-%205.mp4', 'Peppa Pig : Episodes 1 - 5')">
+                        <img src="https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=300" class="media-poster" alt="Season 1 Thumbnail">
+                        <div class="media-title">Episodes 1 - 5 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%206%20-%2010.mp4', 'Peppa Pig : Episodes 6 - 10')">
+                        <img src="https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=300" class="media-poster" alt="Season 1 Thumbnail">
+                        <div class="media-title">Episodes 6 - 10 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%2011%20-%2015.mp4', 'Peppa Pig : Episodes 11 - 15')">
+                        <img src="https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=300" class="media-poster" alt="Season 1 Thumbnail">
+                        <div class="media-title">Episodes 11 - 15 🐖</div>
+                    </div>
+					
+                </div>
 
-    <!-- CATEGORY 2: TV SERIES (WITH SEASON SUB-CATEGORIES) -->
-    <div id="tv" class="section-content">
-        <!-- Series Title Example -->
-        <div class="sub-group">
-            <div class="sub-header" onclick="toggleSub(this)">
-                <span>The 3 Stooges</span>
-                <span class="arrow">▶</span>
-            </div>
-            <div class="sub-body">
-                <!-- Season Sub-category breakdown -->
-                <div style="font-size: 0.8rem; color: var(--accent); font-weight: bold; margin-top: 4px;">Season 1</div>
-                <button class="media-btn" onclick="playMedia("https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/The%203%20Stooges/Season%201/001%20-%20Woman%20Haters%20(1934).mp4', 'S01E01 - Woman Haters')">▶ S01E01 - Woman Haters</button>
-                <button class="media-btn" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/The%203%20Stooges/Season%201/002%20-%20Punch%20Drunks%20(1934).mp4', 'S01E02 Punch Drunks- ')">▶ S01E02 - Punch Drunks</button>
-				<button class="media-btn" onclick="playMedia('https://pub-xxxxxxxx.r2.dev/Breaking.Bad.S01E01.mp4', 'S01E03 - ')">▶ S01E03 - </button>
-                <button class="media-btn" onclick="playMedia('https://pub-xxxxxxxx.r2.dev/Breaking.Bad.S01E02.mp4', 'S01E04 - ')">▶ S01E04 - </button>
+                <!-- HORROR -->
+                <div class="season-title">Action</div>
+                <div class="horizontal-scroll">
+                    
+					<div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_2/Peppa%20Pig%20-%20Episodes%2051%20-%2055.mp4', 'Peppa Pig : Episodes 51 - 55')">
+                        <img src="https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=300" class="media-poster" alt="Season 2 Thumbnail">
+                        <div class="media-title">Episodes 51 - 55 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_2/Peppa%20Pig%20-%20Episodes%2056%20-%2060.mp4', 'Peppa Pig : Episodes 56 - 60')">
+                        <img src="https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=300" class="media-poster" alt="Season 2 Thumbnail">
+                        <div class="media-title">Episodes 56 - 60 🐖</div>
+                    </div>
                 
-                <div style="font-size: 0.8rem; color: var(--accent); font-weight: bold; margin-top: 8px;">Season 2</div>
-                <button class="media-btn" onclick="playMedia('https://pub-xxxxxxxx.r2.dev/Breaking.Bad.S02E01.mp4', 'S02E01 - ')">▶ S02E01 - </button>
-				<button class="media-btn" onclick="playMedia('https://pub-xxxxxxxx.r2.dev/Breaking.Bad.S01E02.mp4', 'S02E02 - ')">▶ S02E02 - </button>
-				<button class="media-btn" onclick="playMedia('https://pub-xxxxxxxx.r2.dev/Breaking.Bad.S01E01.mp4', 'S02E03 - ')">▶ S02E03 - </button>
-                <button class="media-btn" onclick="playMedia('https://pub-xxxxxxxx.r2.dev/Breaking.Bad.S01E02.mp4', 'S03E04 - ')">▶ S02E04 - </button>
+				</div>
+            	
+				<!-- KIDS ONLY -->
+                <div class="season-title">KIDS ONLY</div>
+                <div class="horizontal-scroll">
+                    
+					<div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_2/Peppa%20Pig%20-%20Episodes%2051%20-%2055.mp4', 'Peppa Pig : Episodes 51 - 55')">
+                        <img src="https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=300" class="media-poster" alt="Season 2 Thumbnail">
+                        <div class="media-title">Episodes 51 - 55 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_2/Peppa%20Pig%20-%20Episodes%2056%20-%2060.mp4', 'Peppa Pig : Episodes 56 - 60')">
+                        <img src="https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=300" class="media-poster" alt="Season 2 Thumbnail">
+                        <div class="media-title">Episodes 56 - 60 🐖</div>
+                    </div>
+                
+				</div>
+    </div>
+    
+    <!-- CATEGORY 2: TV SERIES -->
+    <div id="tv" class="section-content">
+	
+        <!-- Series 1: Peppa Pig -->
+        <div class="sub-group">
+            <div class="sub-header" onclick="toggleSub(this)">
+                <span>Peppa Pig   🐷</span>
+                <span class="arrow">▶</span>
             </div>
+            <div class="sub-body">
+			
+                <!-- Season 1 (All episodes share one global season thumbnail image) -->
+                <div class="season-title">Season 1</div>
+                <div class="horizontal-scroll season-episodes" data-season-img="https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=300">
+				
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%201%20-%205.mp4', 'Peppa Pig : Episodes 1 - 5')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 1 - 5 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%206%20-%2010.mp4', 'Peppa Pig : Episodes 6 - 10')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 6 - 10 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%2011%20-%2015.mp4', 'Peppa Pig : Episodes 11 - 15')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 11 - 15 🐖</div>
+                    </div>					
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%206%20-%2010.mp4', 'Peppa Pig : Episodes 6 - 10')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 16 - 20 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%2011%20-%2015.mp4', 'Peppa Pig : Episodes 11 - 15')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 21 - 25 🐖</div>
+                    </div>
+					<div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%2011%20-%2015.mp4', 'Peppa Pig : Episodes 11 - 15')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 26 - 30 🐖</div>
+                    </div>
+					<div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%201%20-%205.mp4', 'Peppa Pig : Episodes 1 - 5')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 11 - 35 🐖</div>
+                    </div>
+					 <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%206%20-%2010.mp4', 'Peppa Pig : Episodes 6 - 10')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 36 - 40 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%2011%20-%2015.mp4', 'Peppa Pig : Episodes 11 - 15')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 41 - 45 🐖</div>
+                    </div>
+					<div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_1/Peppa%20Pig%20-%20Episodes%2011%20-%2015.mp4', 'Peppa Pig : Episodes 11 - 15')">
+                        <img class="media-poster" alt="Season 1">
+                        <div class="media-title">Episodes 46 - 50 🐖</div>
+                    </div>
+					
+                </div>
+
+                <!-- Season 2 (All episodes share a separate global season thumbnail image) -->
+                <div class="season-title">Season 2</div>
+                <div class="horizontal-scroll season-episodes" data-season-img="https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=300">
+				
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_2/Peppa%20Pig%20-%20Episodes%2051%20-%2055.mp4', 'Peppa Pig : Episodes 51 - 55')">
+                        <img class="media-poster" alt="Season 2">
+                        <div class="media-title">Episodes 51 - 55 🐖</div>
+                    </div>
+                    <div class="media-card" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/TV_Shows/Peppa_Pig/Season_2/Peppa%20Pig%20-%20Episodes%2056%20-%2060.mp4', 'Peppa Pig : Episodes 56 - 60')">
+                        <img class="media-poster" alt="Season 2">
+                        <div class="media-title">Episodes 56 - 60 🐖</div>
+                    </div>
+					
+                </div>
+            
+			</div>
         </div>
     </div>
 
-    <!-- CATEGORY 3: MUSIC VIDEOS (GROUPED BY ARTIST) -->
+    <!-- CATEGORY 3: MUSIC TV -->
     <div id="music" class="section-content">
-        <!-- Artist Group Example -->
         <div class="sub-group">
             <div class="sub-header" onclick="toggleSub(this)">
-                <span>Prince</span>
+                <span>ABC Kid Live  🇦🇺</span>
                 <span class="arrow">▶</span>
             </div>
             <div class="sub-body">
-                <button class="media-btn" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/Music_Videos/Prince/Erotic%20City%20(Make%20Love%20Not%20War%20Erotic%20City%20Come%20Alive)%20(Extend_y_B18NVC5xuiE.mp4', 'Erotic City')">▶ Erotic City</button>
-                <button class="media-btn" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/Music_Videos/Prince/Prince%20-%20Purple%20Rain%20(Official%20Video)_y_TvnYmWpD_T8.mp4', 'Purple Rain - Official')">▶ Purple Rain</button>
-            </div>
-        </div>
-		
-		<div class="sub-group">
-            <div class="sub-header" onclick="toggleSub(this)">
-                <span>Michael Jackson</span>
-                <span class="arrow">▶</span>
-            </div>
-            <div class="sub-body">
-                <button class="media-btn" onclick="playMedia('https://pub-264fe1b907024ea6946cc48275ccc709.r2.dev/Music_Videos/Michael%20Jackson/Michael%20Jackson%20-%20Thriller%20(Official%204K%20Video).mp4', 'Thriller - Official')">▶ Thriller</button>
-                <button class="media-btn" onclick="playMedia('https://pub-xxxxxxxx.r2.dev/Daft.Punk.One.More.Time.mp4', 'Jam')">▶ Jam</button>
-            </div>
-        </div>
-
-        <div class="sub-group">
-            <div class="sub-header" onclick="toggleSub(this)">
-                <span>Queen</span>
-                <span class="arrow">▶</span>
-            </div>
-            <div class="sub-body">
-                <button class="media-btn" onclick="playMedia('https://pub-xxxxxxxx.r2.dev/Queen.Bohemian.Rhapsody.mp4', 'Bohemian Rhapsody')">▶ Bohemian Rhapsody</button>
+                <div class="season-title">Live Streams & Clips</div>
+                <div class="horizontal-scroll">
+                    <div class="media-card" onclick="playMedia('https://iview.abc.net.au/show/ready-steady-wiggle/series/8/video/ZW4701A052S00', '-Coming Soon-')">
+                        <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" class="media-poster" alt="Coming Soon">
+                        <div class="media-title">-Coming Soon-</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -229,12 +374,12 @@
     function switchCategory(categoryId, btnElement) {
         document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
+                
         document.getElementById(categoryId).classList.add('active');
         btnElement.classList.add('active');
     }
 
-    // Toggle TV Show / Artist Accordion Dropdowns
+    // Toggle TV Show Accordion Dropdowns
     function toggleSub(headerElement) {
         const group = headerElement.parentElement;
         group.classList.toggle('open');
@@ -244,7 +389,7 @@
     function playMedia(videoUrl, title) {
         const player = document.getElementById('videoPlayer');
         const textLabel = document.getElementById('nowPlayingText');
-        
+                
         player.src = videoUrl;
         player.load();
         player.play().catch(error => {
@@ -252,11 +397,8 @@
         });
 
         textLabel.textContent = "▶ Now Playing: " + title;
-        
-        // Smooth scroll back to top player on mobile when a video is tapped
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 </script>
-
 </body>
 </html>
